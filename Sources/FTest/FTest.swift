@@ -22,6 +22,9 @@ public indirect enum QueryType: CustomStringConvertible {
     case matchingPredicate(String)
     case onlyElement(QueryType)
     
+    // Not sure might delete later
+    case keyboard
+    
     public var description: String {
         switch self {
         case let .boundBy(index):
@@ -32,25 +35,44 @@ public indirect enum QueryType: CustomStringConvertible {
             return "Matching predicate with format: \(format)"
         case let .onlyElement(queryType):
             return "Only element of \(queryType.description)"
+        case .keyboard:
+            return "Keyboard wasn't displayed! Make sure it's disabled under \"Simulator > IO > Keyboard > Connect Hardware Keyboard\""
         }
     }
 }
 
 public struct TestStepError: CustomStringConvertible, Error {
-
+    
     enum Error: CustomStringConvertible {
-        case unexpectedNumberOfElementsMatching(query: String, expected: Int, got: Int)
+        case unexpectedNumberOfElementsMatching(query: AnnotatedQuery, expected: Int, got: Int)
         case timedOutWaitingFor(element: AnnotatedElement)
         case elementDoesNotExist(element: AnnotatedElement)
+        case assertionFailed
         
         var description: String {
             switch self {
             case let .unexpectedNumberOfElementsMatching(query, expected, got):
                 return "🚫 Expected \(expected) instances of \(query), instead got \(got)."
             case let .timedOutWaitingFor(element):
-                return "⏰ Timed out waiting for element: \(element) using query \(element.queryType.description)."
+                return """
+                       ⏰ Timed out waiting for element!
+                           * Element: \(element)
+                           * Query: \(element.queryType.description)
+                       """
             case let .elementDoesNotExist(element):
-                return "👻 Element doesn't exist \(element.element) for predicate \(element.queryType.description). You may need to call `.wait(_:)` before trying to match. Or try a looser predicate like one of the `.contains(_:)` methods on TestStep."
+                // TODO: Change this message. We can't wait before executing the predicate, we wait after!
+                return  """
+                        👻 Element doesn't exist, are you sure it's on screen?
+                           * Check out the `Element` section below above to see what the query chain was
+                           * Element: \(element.element)
+                           * Predicate: \(element.queryType.description)
+                           
+                           * Try
+                              - Adding a `.wait(_:)` call before trying to interact with the element
+                              - Loosening your predicate. Could you use a `contains: text` variant if not using already.
+                        """
+            case .assertionFailed:
+                return "🛑 Assertion failed."
             }
         }
     }
@@ -68,16 +90,6 @@ public struct TestStepError: CustomStringConvertible, Error {
     public var description: String {
         type.description
     }
-}
-
-func performAutoLogin(accessId: String, password: String) -> TestStep<Void> {
-    TestStep<Void>.button(matching: "Start").wait().tap()
-        .zip(.navigationBarTitle(matching: "Nav title").wait())
-        .zip(.navigationButton(matching: "Start").tap())
-        .zip(.firstTextfield(matching: "Access Id").wait().tap().type(accessId))
-        .zip(.firstTextfield(matching: "Password").type(password))
-        .zip(.button(matching: "Login").tap())
-        .map { _ in }
 }
 
 public struct TestStep<Result> {
@@ -133,6 +145,29 @@ public extension TestStep {
         }
     }
     
+    func zip<B, C>(_ b: TestStep<B>, _ c: TestStep<C>) -> TestStep<(Result, B, C)> {
+        .init { app in
+            let a = try self.run(app)
+            let b = try b.run(app)
+            let c = try c.run(app)
+            return (a, b, c)
+        }
+    }
+    
+    func zip<B, C, D>(_ b: TestStep<B>, _ c: TestStep<C>, _ d: TestStep<D>) -> TestStep<(Result, B, C, D)> {
+        .init { app in
+            let a = try self.run(app)
+            let b = try b.run(app)
+            let c = try c.run(app)
+            let d = try d.run(app)
+            return (a, b, c, d)
+        }
+    }
+    
+    func zip<C0, C1, C2, C3>(_ c0: TestStep<C0>, _ c1: TestStep<C1>, _ c2: TestStep<C2>, _ c3: TestStep<C3>) -> TestStep<(Result, C0, C1, C2, C3)> {
+        self.zip(c0, c1, c2).zip(c3).map { ($0.0.0, $0.0.1, $0.0.2, $0.0.3, $0.1) }
+    }
+    
     /// Run the receivers test step, and if it fails, then fallback to the supplied `otherStep`
     func orElse<B>(_ otherStep: TestStep<B>) -> TestStep<Either<Result, B>> {
         .init { app in
@@ -170,7 +205,6 @@ public extension TestStep where Result == AnnotatedQuery {
             let element = $0.query.element(boundBy: index)
             return AnnotatedElement(queryType: .boundBy(index), element: element)
         }
-        .exists(file, line)
     }
     
     func matching(_ text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
@@ -185,7 +219,7 @@ public extension TestStep where Result == AnnotatedQuery {
         self.flatMap { query in
             let queryCount = query.query.count
             guard queryCount == 1 else {
-                return .never(TestStepError(.unexpectedNumberOfElementsMatching(query: "Not implemented", expected: 1, got: queryCount), file: file, line: line))
+                return .never(TestStepError(.unexpectedNumberOfElementsMatching(query: query, expected: 1, got: queryCount), file: file, line: line))
             }
             return .always(AnnotatedElement(queryType: .onlyElement(query.type), element: query.query.firstMatch))
         }
@@ -209,6 +243,11 @@ public extension TestStep where Result == AnnotatedElement {
         }
     }
     
+    func exists(_ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<Void> {
+        let result: Self = exists(file, line)
+        return result.map { _ in }
+    }
+    
     func wait(for timeout: TimeInterval = 2, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
         flatMap { element in
             element.element.waitForExistence(timeout: timeout) ?
@@ -221,17 +260,26 @@ public extension TestStep where Result == AnnotatedElement {
         exists(file, line)
             .do {
                 $0.element.tap()
-                
             }
+    }
+    
+    func tap(_ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<Void> {
+        let result: Self = tap(file, line)
+        return result.map { _ in }
     }
     
     func type(_ text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
         exists(file, line)
             .zip(.init(run: { app in
-                AnnotatedElement(queryType: .matchingPredicate("Boo bar"), element: app.keyboards.element)
+                AnnotatedElement(queryType: .keyboard, element: app.keyboards.element)
             }).exists(file, line))
             .map(\.0)
             .do { $0.element.typeText(text) }
+    }
+    
+    func type(_ text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<Void> {
+        let result: Self = type(text, file, line)
+        return result.map { _ in }
     }
 }
 
@@ -244,118 +292,107 @@ public extension TestStep {
     }
 }
 
-public extension TestStep {
-    
-    private static func locate(_ f: @escaping (XCUIApplication) -> XCUIElementQuery, matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        TestStep<XCUIElementQuery>(run: f)
-            .map(AnnotatedQuery.create(with: .matching(text)))
-            .matching(text, file, line)
-    }
+private func locate(_ f: @escaping (XCUIApplication) -> XCUIElementQuery, matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    TestStep<XCUIElementQuery>(run: f)
+        .map(AnnotatedQuery.create(with: .matching(text)))
+        .matching(text, file, line)
+}
 
-    
-    private static func predicateQuery(_ f: @escaping (XCUIApplication) -> XCUIElementQuery, predicate: NSPredicate) -> TestStep<AnnotatedQuery> {
-        TestStep<XCUIElementQuery>(run: f)
-            .map { AnnotatedQuery(type: .matchingPredicate(predicate.predicateFormat), query: $0.containing(predicate)) }
+
+private func predicateQuery(_ f: @escaping (XCUIApplication) -> XCUIElementQuery, predicate: NSPredicate) -> TestStep<AnnotatedQuery> {
+    TestStep<XCUIElementQuery>(run: f)
+        .map { AnnotatedQuery(type: .matchingPredicate(predicate.predicateFormat), query: $0.containing(predicate)) }
+}
+
+// MARK: Locating by label
+
+private func labelQuery(in f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String) -> TestStep<AnnotatedQuery> {
+    predicateQuery(f, predicate: .containsIgnoringCase(property: "label", value: text))
+}
+
+private func locateLabel(in f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String, boundBy index: Int, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    labelQuery(in: f, containing: text).boundBy(index, file, line)
+}
+
+private func locateFirstLabel(in f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String) -> TestStep<AnnotatedElement> {
+    labelQuery(in: f, containing: text).firstMatch()
+}
+
+private func locateOnlyLabel(_ f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String) -> TestStep<AnnotatedElement> {
+    labelQuery(in: f, containing: text).onlyElement()
+}
+
+// MARK: - Textfields
+
+private func textfieldPlaceholder(containing text: String) -> TestStep<AnnotatedQuery> {
+    predicateQuery(\.textFields, predicate: .containsIgnoringCase(property: "placeholderValue", value: text))
+}
+
+public func textFields(containing text: String) -> TestStep<AnnotatedQuery> {
+    textfieldPlaceholder(containing: text).orElse(labelQuery(in: \.textFields, containing: text))
+}
+
+// MARK: - Static Texts
+
+public func staticTexts(matching text: String) -> TestStep<AnnotatedElement> {
+    locate(\.staticTexts, matching: text)
+}
+
+// MARK: - Buttons
+
+public func button(matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    locate(\.buttons, matching: text, file, line)
+}
+
+public func buttons(containing text: String) -> TestStep<AnnotatedQuery> {
+    labelQuery(in: \.buttons, containing: text)
+}
+
+// MARK: - Navigation
+
+public func navigationButton(matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    locate(\.navigationBars.buttons, matching: text, file, line)
+}
+
+public func navigationBarTitle(matching title: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    locate(\.navigationBars.staticTexts, matching: title, file, line)
+}
+
+// MARK: - Cells
+
+public func cell(matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    locate(\.cells, matching: text, file, line)
+}
+
+public func cell(containing text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedQuery> {
+    labelQuery(in: \.cells, containing: text)
+}
+
+// MARK: - Keyboard
+
+public let dismissKeyboard: TestStep<Void> = {
+    TestStep<XCUIElementQuery>(run: \.keyboards)
+        .map(\.buttons)
+        .map(queryContainingPredicate(.labelContains(value: "return")))
+        .map { _ in }
+}()
+
+func queryContainingPredicate(_ predicate: NSPredicate) -> (XCUIElementQuery) -> XCUIElementQuery {
+    return { query in
+        query.containing(predicate)
     }
-    
-    // MARK: Locating by label
-    
-    private static func labelQuery(in f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String) -> TestStep<AnnotatedQuery> {
-        predicateQuery(f, predicate: .containsIgnoringCase(property: "label", value: text))
+}
+
+#warning("Migrate to AnnotatedElement")
+public func element(matching elementType: XCUIElement.ElementType, with identifier: String) -> TestStep<XCUIElement> {
+    .init { app in
+        app.descendants(matching: elementType)
+            .element(matching: elementType, identifier: identifier)
     }
-    
-    private static func locateLabel(in f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String, boundBy index: Int, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        labelQuery(in: f, containing: text).boundBy(index, file, line)
-    }
-    
-    private static func locateFirstLabel(in f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String) -> TestStep<AnnotatedElement> {
-        labelQuery(in: f, containing: text).firstMatch()
-    }
-    
-    private static func locateOnlyLabel(_ f: @escaping (XCUIApplication) -> XCUIElementQuery, containing text: String) -> TestStep<AnnotatedElement> {
-        labelQuery(in: f, containing: text).onlyElement()
-    }
-    
-    // MARK: Textfields
-    
-    private static func textfieldPlaceholder(containing text: String) -> TestStep<AnnotatedQuery> {
-        predicateQuery(\.textFields, predicate: .containsIgnoringCase(property: "placeholderValue", value: text))
-    }
-    
-    static func firstTextfield(matching text: String, file: StaticString = #filePath, line: UInt = #line) -> TestStep<AnnotatedElement> {
-        // first check for placeholders and then labels
-        textfieldPlaceholder(containing: text)
-            .firstMatch()
-            .orElse(locate(\.textFields, matching: text))
-    }
-    
-    static func onlyTextfield(matching text: String) -> TestStep<AnnotatedElement> {
-        textfieldPlaceholder(containing: text)
-            .onlyElement()
-            .orElse(locate(\.textFields, matching: text))
-    }
-    
-    static func firstTextfield(containing text: String) -> TestStep<AnnotatedElement> {
-        textfieldPlaceholder(containing: text)
-            .firstMatch()
-            .orElse(locateFirstLabel(in: \.textFields, containing: text))
-    }
-    
-    static func textField(containing text: String) -> TestStep<AnnotatedQuery> {
-        textfieldPlaceholder(containing: text)
-            .orElse(labelQuery(in: \.textFields, containing: text))
-    }
-    
-    static func textField(containing text: String, boundBy: Int) -> TestStep<AnnotatedElement> {
-        textfieldPlaceholder(containing: text)
-            .boundBy(boundBy)
-            .orElse(
-                locateLabel(in: \.textFields, containing: text, boundBy: boundBy)
-            )
-    }
-    
-    static func label(matching text: String) -> TestStep<AnnotatedElement> {
-        locate(\.staticTexts, matching: text)
-    }
-    
-    // MARK: - Buttons
-    
-    static func button(matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        locate(\.buttons, matching: text, file, line)
-    }
-    
-    static func buttons(containing text: String) -> TestStep<AnnotatedQuery> {
-        labelQuery(in: \.buttons, containing: text)
-    }
-    
-    // MARK: - Navigation
-    
-    static func navigationButton(matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        locate(\.navigationBars.buttons, matching: text, file, line)
-    }
-    
-    static func navigationBarTitle(matching title: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        locate(\.navigationBars.staticTexts, matching: title, file, line)
-    }
-    
-    // MARK: - Cells
-    
-    static func cell(matching text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        locate(\.cells, matching: text, file, line)
-    }
-    
-    static func cell(containing text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedQuery> {
-        labelQuery(in: \.cells, containing: text)
-    }
-    
-    #warning("Migrate to AnnotatedElement")
-    static func element(matching elementType: XCUIElement.ElementType, with identifier: String) -> TestStep<XCUIElement> {
-        .init { app in
-            app.descendants(matching: elementType)
-                .element(matching: elementType, identifier: identifier)
-        }
-    }
-    
+}
+
+
+public extension TestStep {
     func `do`(_ f: @escaping (Result) -> Void) -> Self {
         .init { app in
             let output = try self.run(app)
@@ -364,19 +401,20 @@ public extension TestStep {
         }
     }
     
-    func printResult() -> Self {
+    func printResult(prefix: String = "") -> Self {
         self.do {
-            print("\($0)")
+            print("\(prefix)\($0)")
         }
     }
 }
 
 public extension TestStep where Result == Bool {
-   
-    func assertTrue() -> Self {
-        // TODO: This will need to change potentially to bubble up a warning/error
-        self.do { result in
-            XCTAssert(result)
+    
+    func assertTrue(_ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+        self.flatMap { result in
+            result ?
+                .always(result) :
+                .never(TestStepError(.assertionFailed, file: file, line: line))
         }
     }
 }
@@ -385,5 +423,48 @@ extension NSPredicate {
     
     static func containsIgnoringCase(property: String, value: String) -> NSPredicate {
         NSPredicate(format: "\(property) CONTAINS[c] %@", value)
+    }
+    
+    static func labelContains(value: String) -> NSPredicate {
+        containsIgnoringCase(property: "label", value: value)
+    }
+    
+    static func placeholderContains(value: String) -> NSPredicate {
+        containsIgnoringCase(property: "placeholder", value: value)
+    }
+}
+
+@resultBuilder
+public struct TestBuilder {
+    
+    public static func buildBlock(_ components: TestStep<Void>...) -> TestStep<Void> {
+        TestStep { app in
+            for comp in components {
+                try comp.run(app)
+            }
+        }
+       
+    }
+}
+
+extension TestStep {
+    
+    public init(@TestBuilder steps: @escaping () -> TestStep<Result>) {
+        self.init { app in
+            try steps().run(app)
+        }
+    }
+}
+
+#warning("Just experimenting with different syntaxes")
+extension String {
+    
+    /*
+     "From >".buttons.firstMatch().wait().tap()
+     fromAccount.buttons.firstMatch().wait().tap()
+     */
+    
+    var buttons: TestStep<AnnotatedQuery> {
+        FTest.buttons(containing: self)
     }
 }
