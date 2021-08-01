@@ -23,8 +23,6 @@ public indirect enum QueryType: CustomStringConvertible {
     case matchingIdentifier(String)
     case matchingPredicate(String)
     case onlyElement(QueryType)
-    
-    // Not sure might delete later
     case keyboard
     
     public var description: String {
@@ -38,7 +36,7 @@ public indirect enum QueryType: CustomStringConvertible {
         case let .onlyElement(queryType):
             return "Only element of \(queryType.description)"
         case .keyboard:
-            return "Keyboard wasn't displayed! Make sure it's disabled under \"Simulator > IO > Keyboard > Connect Hardware Keyboard\""
+            return "Keyboard wasn't displayed! Ensure that \"Connect Hardware Keyboard\" is disabled under: \"Simulator > IO > Keyboard > Connect Hardware Keyboard\""
         case let .matchingIdentifier(identifier):
             return "Matching accessibility identifier \(identifier)"
         }
