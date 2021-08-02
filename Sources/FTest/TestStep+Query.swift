@@ -9,7 +9,7 @@ public extension TestStep where Result == AnnotatedQuery {
         }
     }
     
-    func matching(_ text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
+    func matching(exactly text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
         map {
             let element = $0.query[text]
             return AnnotatedElement(queryType: .matching(text), element: element)
@@ -26,10 +26,27 @@ public extension TestStep where Result == AnnotatedQuery {
         }
     }
     
-    func wait(for timeout: TimeInterval = Defaults.timeout, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+    func onlyElement(_ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
         flatMap { query in
-            // Wait until the query matches at least one element
-            let predicate = NSPredicate(format: "count >= 1")
+            // In order to provide a timely, and useful error message we can't look at the `query.elemnt` as that'll trap if there is more than one.
+            // This isn't for free, we pay a performance cost of running the query to get a stronger assertion.
+            guard query.query.count == 1 else {
+                return .never(TestStepError(.noElementsMatchingQuery(query: query), file: file, line: line))
+            }
+            return .always(AnnotatedElement(queryType: .onlyElement(query.type), element: query.query.firstMatch))
+        }
+    }
+    
+    func first() -> TestStep<AnnotatedElement> {
+        map { query in
+            AnnotatedElement(queryType: query.type, element: query.query.firstMatch)
+        }
+    }
+    
+    func wait(timeout: TimeInterval = Defaults.timeout, for minQueryCount: Int = 1, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+        flatMap { query in
+            // Wait until the query matches the supplied minimum query count.
+            let predicate = NSPredicate(format: "count >= \(minQueryCount)")
             let waiter = XCTWaiter()
             let result = waiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: query.query)], timeout: timeout)
             switch result {
@@ -40,24 +57,6 @@ public extension TestStep where Result == AnnotatedQuery {
             @unknown default:
                 return .never(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
             }
-        }
-    }
-    
-    func onlyElement(_ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        flatMap { query in
-            // In order to provide a timely, and useful error message we can't look at the `query.elemnt` as that'll trap if there is more than one.
-            // This isn't for free, we pay a performance cost of running the query to get a stronger assertion.
-            let queryCount = query.query.count
-            guard queryCount == 1 else {
-                return .never(TestStepError(.noElementsMatchingQuery(query: query), file: file, line: line))
-            }
-            return .always(AnnotatedElement(queryType: .onlyElement(query.type), element: query.query.firstMatch))
-        }
-    }
-    
-    func first() -> TestStep<AnnotatedElement> {
-        map { query in
-            AnnotatedElement(queryType: query.type, element: query.query.firstMatch)
         }
     }
 }
@@ -85,22 +84,6 @@ public extension TestStep where Result == XCUIElementQuery {
 
 public func find(_ f: @escaping (XCUIElement) -> XCUIElementQuery) -> TestStep<XCUIElementQuery> {
     TestStep<XCUIElementQuery>(run: f)
-}
-
-public extension TestStep {
-    func `do`(sideEffects f: @escaping (Result) -> Void) -> Self {
-        .init { app in
-            let output = try self.run(app)
-            f(output)
-            return output
-        }
-    }
-    
-    func printResult(prefix: String = "") -> Self {
-        self.do {
-            print("\(prefix)\($0)")
-        }
-    }
 }
 
 public extension TestStep where Result == Bool {

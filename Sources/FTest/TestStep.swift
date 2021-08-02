@@ -105,4 +105,18 @@ public extension TestStep {
             raise(SIGINT)
         }
     }
+    
+    func `do`(sideEffects f: @escaping (Result) -> Void) -> Self {
+        .init { app in
+            let output = try self.run(app)
+            f(output)
+            return output
+        }
+    }
+    
+    func printResult(prefix: String = "") -> Self {
+        self.do {
+            print("\(prefix)\($0)")
+        }
+    }
 }
