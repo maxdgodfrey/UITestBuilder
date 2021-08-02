@@ -26,11 +26,30 @@ public extension TestStep where Result == AnnotatedQuery {
         }
     }
     
+    func wait(for timeout: TimeInterval = Defaults.timeout, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+        flatMap { query in
+            // Wait until the query matches at least one element
+            let predicate = NSPredicate(format: "count >= 1")
+            let waiter = XCTWaiter()
+            let result = waiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: query.query)], timeout: timeout)
+            switch result {
+            case .completed:
+                return .always(query)
+            case .timedOut, .incorrectOrder, .interrupted, .invertedFulfillment:
+                return .never(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
+            @unknown default:
+                return .never(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
+            }
+        }
+    }
+    
     func onlyElement(_ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
         flatMap { query in
+            // In order to provide a timely, and useful error message we can't look at the `query.elemnt` as that'll trap if there is more than one.
+            // This isn't for free, we pay a performance cost of running the query to get a stronger assertion.
             let queryCount = query.query.count
             guard queryCount == 1 else {
-                return .never(TestStepError(.unexpectedNumberOfElementsMatching(query: query, expected: 1, got: queryCount), file: file, line: line))
+                return .never(TestStepError(.noElementsMatchingQuery(query: query), file: file, line: line))
             }
             return .always(AnnotatedElement(queryType: .onlyElement(query.type), element: query.query.firstMatch))
         }

@@ -46,20 +46,25 @@ public indirect enum QueryType: CustomStringConvertible {
 public struct TestStepError: CustomStringConvertible, Error {
     
     enum Error: CustomStringConvertible {
-        case unexpectedNumberOfElementsMatching(query: AnnotatedQuery, expected: Int, got: Int)
+        case noElementsMatchingQuery(query: AnnotatedQuery)
         case timedOutWaitingFor(element: AnnotatedElement)
+        case timedOutWaitingForQuery(query: AnnotatedQuery)
         case elementDoesNotExist(element: AnnotatedElement)
         case assertionFailed
         
         var description: String {
             switch self {
-            case let .unexpectedNumberOfElementsMatching(query, expected, got):
-                return "🚫 Expected \(expected) instances of \(query), instead got \(got)."
             case let .timedOutWaitingFor(element):
                 return """
                        ⏰ Timed out waiting for element!
                            * Element: \(element)
                            * Query: \(element.queryType.description)
+                       """
+                
+            case let .timedOutWaitingForQuery(query):
+                return """
+                       ⏰ Timed out waiting for query!
+                           * Query: \(query.type.description)
                        """
             case let .elementDoesNotExist(element):
                 // TODO: Change this message. We can't wait before executing the predicate, we wait after!
@@ -69,12 +74,20 @@ public struct TestStepError: CustomStringConvertible, Error {
                            * Element: \(element.element)
                            * Predicate: \(element.queryType.description)
                            
-                           * Try
+                           * Try:
                               - Adding a `.wait(_:)` call before trying to interact with the element
-                              - Loosening your predicate. Could you use a `contains: text` variant if not using already.
+                              - Loosening your predicate. Try a `contains(_:)` variant if not using already.
                         """
             case .assertionFailed:
                 return "🛑 Assertion failed."
+            case let .noElementsMatchingQuery(query):
+                return """
+                       ❓ No element found matching query.
+                           * Query: \(query.type.description)
+                       
+                           * Try:
+                              - Loosening your query. Could you use a `contains: text` variant.
+                       """
             }
         }
     }

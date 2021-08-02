@@ -17,6 +17,6 @@ public extension NSPredicate {
     }
     
     static func placeholderContains(value: String) -> NSPredicate {
-        containsIgnoringCase(property: "placeholder", value: value)
+        containsIgnoringCase(property: "placeholderValue", value: value)
     }
 }

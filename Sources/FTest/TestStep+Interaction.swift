@@ -23,7 +23,7 @@ public extension TestStep where Result == AnnotatedElement {
         return result.map { _ in }
     }
     
-    func wait(for timeout: TimeInterval = 2, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+    func wait(for timeout: TimeInterval = Defaults.timeout, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
         flatMap { element in
             element.element.waitForExistence(timeout: timeout) ?
                 .always(element) :

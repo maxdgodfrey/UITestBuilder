@@ -69,7 +69,7 @@ public extension TestStep {
         }
     }
     
-    func zip<C0, C1, C2, C3>(_ c0: TestStep<C0>, _ c1: TestStep<C1>, _ c2: TestStep<C2>, _ c3: TestStep<C3>) -> TestStep<(Result, C0, C1, C2, C3)> {
+    func zip<B, C, D, E>(_ c0: TestStep<B>, _ c1: TestStep<C>, _ c2: TestStep<D>, _ c3: TestStep<E>) -> TestStep<(Result, B, C, D, E)> {
         self.zip(c0, c1, c2).zip(c3).map { ($0.0.0, $0.0.1, $0.0.2, $0.0.3, $0.1) }
     }
     
@@ -97,6 +97,12 @@ public extension TestStep {
     func optional() -> TestStep<Result?> {
         TestStep<Result?> { app in
             try? self.run(app)
+        }
+    }
+    
+    func debug() -> Self {
+        self.do { result in
+            raise(SIGINT)
         }
     }
 }
