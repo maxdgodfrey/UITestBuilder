@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import FTest
+import UITestBuilder
 
 class TestHarnessUITests: XCTestCase {
 

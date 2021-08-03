@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7B8B63B726B67BD300D72933 /* FTest in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8B63B626B67BD300D72933 /* FTest */; };
+		7B889D3526B94DD400229FCC /* UITestBuilder in Frameworks */ = {isa = PBXBuildFile; productRef = 7B889D3426B94DD400229FCC /* UITestBuilder */; };
 		7B8B63B926B697E900D72933 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8B63B826B697E900D72933 /* LoginView.swift */; };
 		7B8E22CB2668CA0100E34632 /* TestHarnessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8E22CA2668CA0100E34632 /* TestHarnessApp.swift */; };
 		7B8E22CD2668CA0100E34632 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8E22CC2668CA0100E34632 /* ContentView.swift */; };
@@ -52,7 +52,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7B8B63B726B67BD300D72933 /* FTest in Frameworks */,
+				7B889D3526B94DD400229FCC /* UITestBuilder in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,7 +151,7 @@
 			);
 			name = TestHarnessUITests;
 			packageProductDependencies = (
-				7B8B63B626B67BD300D72933 /* FTest */,
+				7B889D3426B94DD400229FCC /* UITestBuilder */,
 			);
 			productName = TestHarnessUITests;
 			productReference = 7B8E22DD2668D5A500E34632 /* TestHarnessUITests.xctest */;
@@ -470,9 +470,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		7B8B63B626B67BD300D72933 /* FTest */ = {
+		7B889D3426B94DD400229FCC /* UITestBuilder */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FTest;
+			productName = UITestBuilder;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
