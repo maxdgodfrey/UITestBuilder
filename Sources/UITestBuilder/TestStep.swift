@@ -20,6 +20,14 @@ public extension TestStep {
     static func always(_ a: Result) -> TestStep { TestStep { _ in a } }
 }
 
+/// Standard entry point into creating XCUIElementQueries. Allows you to lift a supplied function into a TestStep. This provides a consistent way of describing where to find an element,
+/// deferring the __actual__ finding till the test is run. 
+/// - Parameter query: A function from element to query. This is intended so you can lean on KeyPaths for a nicer shorthand  e.g. `find(\.buttons.staticTexts)`.
+/// - Returns: The supplied query lifted into a composable TestStep. See `extension TestStep where Result == XCUIElement {` for avaliable usages.
+public func find(_ query: @escaping (XCUIElement) -> XCUIElementQuery) -> TestStep<XCUIElementQuery> {
+    TestStep<XCUIElementQuery>(run: query)
+}
+
 public enum Either<A, B> {
     case left(A)
     case right(B)

@@ -82,10 +82,6 @@ public extension TestStep where Result == XCUIElementQuery {
     }
 }
 
-public func find(_ f: @escaping (XCUIElement) -> XCUIElementQuery) -> TestStep<XCUIElementQuery> {
-    TestStep<XCUIElementQuery>(run: f)
-}
-
 public extension TestStep where Result == Bool {
     
     func assert(_ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
