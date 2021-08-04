@@ -14,7 +14,7 @@ public extension TestStep where Result == AnnotatedElement {
             if element.element.exists {
                 return .always(element)
             }
-            return .never(TestStepError(.elementDoesNotExist(element: element), file: file, line: line))
+            return .fail(TestStepError(.elementDoesNotExist(element: element), file: file, line: line))
         }
     }
     
@@ -27,7 +27,7 @@ public extension TestStep where Result == AnnotatedElement {
         flatMap { element in
             element.element.waitForExistence(timeout: timeout) ?
                 .always(element) :
-                .never(TestStepError(.timedOutWaitingFor(element: element), file: file, line: line))
+                .fail(TestStepError(.timedOutWaitingFor(element: element), file: file, line: line))
         }
     }
     

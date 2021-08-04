@@ -7,6 +7,10 @@
 
 import XCTest
 
+/// A step of execution in a Test. Allows us to compose a test from smaller units.
+/// - Discussion:
+/// `TestStep<Void>` is the backing representation for the `UITestBuilder`result builder.
+/// You can lift XCUIElement queries into a TestStep via `find(_:)`.
 public struct TestStep<Result> {
     let run: (XCUIElement) throws -> Result
     
@@ -16,12 +20,46 @@ public struct TestStep<Result> {
 }
 
 public extension TestStep {
-    static func never(_ a: Error) -> TestStep { TestStep { _ in throw a } }
-    static func always(_ a: Result) -> TestStep { TestStep { _ in a } }
+    
+    /// Creates a TestStep that always fails with the supplied Error.
+    /// This is useful when you want to cause a test to fail based on some input.
+    /// In practice you can use existing combinators without having to reach for these TestSteps.
+    ///
+    /// For example if you wanted to ensure that, without waiting there is at least one button on screen you can::
+    /// ```
+    /// find(\.buttons)
+    ///     .flatMap { (elementQuery: XCUIElementQuery) in
+    ///         if elementQuery.count < 1 {
+    ///             return .fail(TestStepError.noElementsFoundMatchingQuery(elementQuery))
+    ///         }
+    ///         return .always(elementQuery)
+    ///     }
+    /// ```
+    /// - Parameter error: The Error to fail the test with.
+    /// - Returns: A TestStep that always fails.
+    static func fail(_ error: Error) -> TestStep { TestStep { _ in throw error } }
+    
+    /// Creates a TestStep that continues with the supplied value..
+    /// This is useful when you want to allow a test to continue in some case, but fail in another. Also see  `static TestStep.fail(_:)`.
+    /// In practice you can use existing combinators without having to reach for these TestSteps.
+    ///
+    /// For example if you wanted to ensure that, without waiting there is at least one button on screen you can::
+    /// ```
+    /// find(\.buttons)
+    ///     .flatMap { (elementQuery: XCUIElementQuery) -> TestStep<XCUIElementQuery> in
+    ///         if elementQuery.count < 1 {
+    ///             return .fail(TestStepError.noElementsFoundMatchingQuery(elementQuery))
+    ///         }
+    ///         return .always(elementQuery)
+    ///     }
+    /// ```
+    /// - Parameter error: The value to continue the test with.
+    /// - Returns: A TestStep that passes the supplied value on.
+    static func always(_ value: Result) -> TestStep { TestStep { _ in value } }
 }
 
 /// Standard entry point into creating XCUIElementQueries. Allows you to lift a supplied function into a TestStep. This provides a consistent way of describing where to find an element,
-/// deferring the __actual__ finding till the test is run. 
+/// deferring the __actual__ finding till the test is run.
 /// - Parameter query: A function from element to query. This is intended so you can lean on KeyPaths for a nicer shorthand  e.g. `find(\.buttons.staticTexts)`.
 /// - Returns: The supplied query lifted into a composable TestStep. See `extension TestStep where Result == XCUIElement {` for avaliable usages.
 public func find(_ query: @escaping (XCUIElement) -> XCUIElementQuery) -> TestStep<XCUIElementQuery> {

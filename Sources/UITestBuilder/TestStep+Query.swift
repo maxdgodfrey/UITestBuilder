@@ -31,7 +31,7 @@ public extension TestStep where Result == AnnotatedQuery {
             // In order to provide a timely, and useful error message we can't look at the `query.elemnt` as that'll trap if there is more than one.
             // This isn't for free, we pay a performance cost of running the query to get a stronger assertion.
             guard query.query.count == 1 else {
-                return .never(TestStepError(.noElementsMatchingQuery(query: query), file: file, line: line))
+                return .fail(TestStepError(.noElementsMatchingQuery(query: query), file: file, line: line))
             }
             return .always(AnnotatedElement(queryType: .onlyElement(query.type), element: query.query.firstMatch))
         }
@@ -53,9 +53,9 @@ public extension TestStep where Result == AnnotatedQuery {
             case .completed:
                 return .always(query)
             case .timedOut, .incorrectOrder, .interrupted, .invertedFulfillment:
-                return .never(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
+                return .fail(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
             @unknown default:
-                return .never(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
+                return .fail(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
             }
         }
     }
@@ -88,7 +88,7 @@ public extension TestStep where Result == Bool {
         self.flatMap { result in
             result ?
                 .always(result) :
-                .never(TestStepError(.assertionFailed, file: file, line: line))
+                .fail(TestStepError(.assertionFailed, file: file, line: line))
         }
     }
 }
