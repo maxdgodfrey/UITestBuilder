@@ -66,6 +66,18 @@ public func find(_ query: @escaping (XCUIElement) -> XCUIElementQuery) -> TestSt
     TestStep<XCUIElementQuery>(run: query)
 }
 
+/// Convience for starting a step in a test, for when you don't care about the specific element, but you want to perform a test step interaction.
+/// Note you can only trigger interactions that can't fail
+/// For instance, to swipe up on the screen,
+/// ```
+/// screen()
+///     .swipeUp()
+/// ```
+/// - Returns:
+public func screen() -> TestStep<XCUIElement> {
+    TestStep { $0 }
+}
+
 public enum Either<A, B> {
     case left(A)
     case right(B)
@@ -199,5 +211,9 @@ public extension TestStep {
         self.do {
             print("\(prefix)\($0)")
         }
+    }
+    
+    func toVoidStep() -> TestStep<Void> {
+        map { _ in }
     }
 }

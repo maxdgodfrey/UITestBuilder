@@ -16,7 +16,7 @@ public extension TestStep where Result == Void {
     }
     
     func then(_ other: TestStep<Void>) -> TestStep<Void> {
-        zip(other).map { _ in }
+        zip(other).toVoidStep()
     }
 }
 
