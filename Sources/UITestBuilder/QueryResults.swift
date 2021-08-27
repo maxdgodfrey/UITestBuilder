@@ -69,7 +69,7 @@ public struct TestStepError: CustomStringConvertible, Error {
             case let .elementDoesNotExist(element):
                 // TODO: Change this message. We can't wait before executing the predicate, we wait after!
                 return  """
-                        👻 Element doesn't exist, are you sure it's on screen?
+                        👻 \(element.element) doesn't exist, are you sure it's on screen?
                            * Check out the `Element` section below above to see what the query chain was
                            * Element: \(element.element)
                            * Predicate: \(element.queryType.description)
@@ -86,7 +86,7 @@ public struct TestStepError: CustomStringConvertible, Error {
                            * Query: \(query.type.description)
                        
                            * Try:
-                              - Loosening your query. Could you use a `contains: text` variant.
+                              - Loosening your query. Could you use a `contains: text` variant?
                        """
             }
         }

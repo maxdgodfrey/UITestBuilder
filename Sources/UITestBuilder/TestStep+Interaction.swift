@@ -65,9 +65,9 @@ public extension TestStep where Result == AnnotatedElement {
         return result.toVoidStep()
     }
     
-    func drag(to other: Self) -> TestStep<Void> {
+    func drag(to other: Self, pressDuration: TimeInterval = 0.2) -> TestStep<Void> {
         zip(other)
-            .do { $0.0.element.press(forDuration: 0.2, thenDragTo: $0.1.element) }
+            .do { $0.0.element.press(forDuration: pressDuration, thenDragTo: $0.1.element) }
             .toVoidStep()
     }
     
