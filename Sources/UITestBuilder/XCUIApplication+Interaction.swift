@@ -16,30 +16,35 @@ extension TestStep where Result == XCUIApplication {
     {
         self.do { app in
             app.swipe(direction, velocity: velocity)
-        }.toVoidStep()
+        }
+        .toVoidStep()
     }
 
     public func tap() -> TestStep<Void> {
         self.do { app in
             app.tap()
-        }.toVoidStep()
+        }
+        .toVoidStep()
     }
 
     public func doubleTap() -> TestStep<Void> {
         self.do { app in
             app.doubleTap()
-        }.toVoidStep()
+        }
+        .toVoidStep()
     }
 
     public func rotate(_ rotation: CGFloat, withVelocity velocity: CGFloat) -> TestStep<Void> {
         self.do { app in
             app.rotate(rotation, withVelocity: velocity)
-        }.toVoidStep()
+        }
+        .toVoidStep()
     }
 
     public func press(for duration: TimeInterval) -> TestStep<Void> {
         self.do { app in
             app.press(forDuration: duration)
-        }.toVoidStep()
+        }
+        .toVoidStep()
     }
 }

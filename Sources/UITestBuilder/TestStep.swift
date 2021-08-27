@@ -13,14 +13,14 @@ import XCTest
 /// You can lift XCUIElement queries into a TestStep via `find(_:)`.
 public struct TestStep<Result> {
     let run: (XCUIElement) throws -> Result
-    
+
     public func callAsFunction(_ app: XCUIApplication) throws -> Result {
         try self.run(app)
     }
 }
 
-public extension TestStep {
-    
+extension TestStep {
+
     /// Creates a TestStep that always fails with the supplied Error.
     /// This is useful when you want to cause a test to fail based on some input.
     /// In practice you can use existing combinators without having to reach for these TestSteps.
@@ -62,8 +62,7 @@ public extension TestStep {
 /// deferring the __actual__ finding till the test is run.
 /// - Parameter query: A function from element to query. This is intended so you can lean on KeyPaths for a nicer shorthand  e.g. `find(\.buttons.staticTexts)`.
 /// - Returns: The supplied query lifted into a composable TestStep. See `extension TestStep where Result == XCUIElement {` for avaliable usages.
-public func find(_ query: @escaping (XCUIElement) -> XCUIElementQuery) -> TestStep<XCUIElementQuery>
-{
+public func find(_ query: @escaping (XCUIElement) -> XCUIElementQuery) -> TestStep<XCUIElementQuery> {
     TestStep<XCUIElementQuery>(run: query)
 }
 
@@ -148,7 +147,10 @@ extension TestStep {
 
     /// A variant of `TestStep.zip(_:)` that allow four diffferent steps.
     public func zip<B, C, D, E>(
-        _ c0: TestStep<B>, _ c1: TestStep<C>, _ c2: TestStep<D>, _ c3: TestStep<E>
+        _ c0: TestStep<B>,
+        _ c1: TestStep<C>,
+        _ c2: TestStep<D>,
+        _ c3: TestStep<E>
     ) -> TestStep<(Result, B, C, D, E)> {
         self.zip(c0, c1, c2).zip(c3).map { ($0.0.0, $0.0.1, $0.0.2, $0.0.3, $0.1) }
     }
