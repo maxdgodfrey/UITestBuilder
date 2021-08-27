@@ -5,8 +5,8 @@
 //  Created by Max Godfrey on 3/06/21.
 //
 
-import XCTest
 import UITestBuilder
+import XCTest
 
 class TestHarnessUITests: XCTestCase {
 
@@ -17,12 +17,12 @@ class TestHarnessUITests: XCTestCase {
         continueAfterFailure = false
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
-    
+
     func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
         app.launch()
-        
+
         test(application: app) {
             Given {
                 loggedIn()

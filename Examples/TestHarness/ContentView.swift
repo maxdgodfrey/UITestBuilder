@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    
+
     let user: User
-    
+
     var body: some View {
         List {
             NavigationLink(destination: UselessForm()) { Text("Show a form") }
@@ -26,12 +26,12 @@ struct Selection: Identifiable {
 }
 
 struct UselessForm: View {
-    
+
     @State var numberInput: String = ""
     @State var textInput: String = ""
     @Environment(\.presentationMode) var presentationMode
     @State var sheetItem: Selection?
-    
+
     var body: some View {
         Form {
             TextField("Number input", text: $numberInput)
@@ -49,7 +49,7 @@ struct UselessForm: View {
                     .default(Text("Confirm")) {
                         presentationMode.wrappedValue.dismiss()
                     },
-                    .cancel()
+                    .cancel(),
                 ]
             )
         }

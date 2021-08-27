@@ -5,13 +5,13 @@
 //  Created by Max Godfrey on 1/08/21.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 struct LoginView: View {
 
     @ObservedObject var viewModel: LoginViewModel
-    
+
     var body: some View {
         VStack {
             TextField("Username", text: $viewModel.userName).padding()
@@ -40,16 +40,16 @@ struct LoginView: View {
 final class LoginViewModel: ObservableObject {
     @Published var userName: String = ""
     @Published var password: String = ""
-    
+
     @Published var isLoading: Bool = false
     @Published var error: String?
 
     private let loginSubject = PassthroughSubject<Void, Never>()
-    
+
     var loginSuccesfull: ((User) -> Void)? = nil
-    
+
     var cancellables = Set<AnyCancellable>()
-    
+
     init() {
         loginSubject
             .flatMap {
@@ -69,17 +69,17 @@ final class LoginViewModel: ObservableObject {
             .store(in: &cancellables)
 
     }
-    
+
     func login() {
         isLoading = true
         loginSubject.send(())
     }
-    
+
 }
 
 struct API {
     let loginWithUsernameAndPassword: (String, String) -> AnyPublisher<User, Error>
-    
+
     static let live: Self = .init { username, _ in
         Just(User(username: username))
             .delay(for: .seconds(1), scheduler: DispatchQueue.main)
@@ -87,4 +87,3 @@ struct API {
             .eraseToAnyPublisher()
     }
 }
-

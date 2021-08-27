@@ -13,9 +13,9 @@ struct User {
 
 @main
 struct TestHarnessApp: App {
-    
+
     @StateObject var rootViewModel = RootViewModel()
-    
+
     var body: some Scene {
         WindowGroup {
             NavigationView {
@@ -30,11 +30,11 @@ struct TestHarnessApp: App {
 }
 
 final class RootViewModel: ObservableObject {
-    
+
     @Published var user: User?
-    
+
     let loginViewModel: LoginViewModel
-    
+
     init() {
         loginViewModel = LoginViewModel()
         loginViewModel.loginSuccesfull = { [weak self] user in

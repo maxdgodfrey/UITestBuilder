@@ -1,6 +1,6 @@
 //
 //  QueryResults.swift
-//  
+//
 //
 //  Created by Max Godfrey on 1/08/21.
 //
@@ -24,7 +24,7 @@ public indirect enum QueryType: CustomStringConvertible {
     case matchingPredicate(String)
     case onlyElement(QueryType)
     case keyboard
-    
+
     public var description: String {
         switch self {
         case let .boundBy(index):
@@ -44,64 +44,64 @@ public indirect enum QueryType: CustomStringConvertible {
 }
 
 public struct TestStepError: CustomStringConvertible, Error {
-    
+
     enum Error: CustomStringConvertible {
         case noElementsMatchingQuery(query: AnnotatedQuery)
         case timedOutWaitingFor(element: AnnotatedElement)
         case timedOutWaitingForQuery(query: AnnotatedQuery)
         case elementDoesNotExist(element: AnnotatedElement)
         case assertionFailed
-        
+
         var description: String {
             switch self {
             case let .timedOutWaitingFor(element):
                 return """
-                       ⏰ Timed out waiting for element!
-                           * Element: \(element)
-                           * Query: \(element.queryType.description)
-                       """
-                
+                    ⏰ Timed out waiting for element!
+                        * Element: \(element)
+                        * Query: \(element.queryType.description)
+                    """
+
             case let .timedOutWaitingForQuery(query):
                 return """
-                       ⏰ Timed out waiting for query!
-                           * Query: \(query.type.description)
-                       """
+                    ⏰ Timed out waiting for query!
+                        * Query: \(query.type.description)
+                    """
             case let .elementDoesNotExist(element):
                 // TODO: Change this message. We can't wait before executing the predicate, we wait after!
-                return  """
-                        👻 \(element.element) doesn't exist, are you sure it's on screen?
-                           * Check out the `Element` section below above to see what the query chain was
-                           * Element: \(element.element)
-                           * Predicate: \(element.queryType.description)
-                           
-                           * Try:
-                              - Adding a `.wait(_:)` call before trying to interact with the element
-                              - Loosening your predicate. Try a `contains(_:)` variant if not using already.
-                        """
+                return """
+                    👻 \(element.element) doesn't exist, are you sure it's on screen?
+                       * Check out the `Element` section below above to see what the query chain was
+                       * Element: \(element.element)
+                       * Predicate: \(element.queryType.description)
+                       
+                       * Try:
+                          - Adding a `.wait(_:)` call before trying to interact with the element
+                          - Loosening your predicate. Try a `contains(_:)` variant if not using already.
+                    """
             case .assertionFailed:
                 return "🛑 Assertion failed."
             case let .noElementsMatchingQuery(query):
                 return """
-                       ❓ No element found matching query.
-                           * Query: \(query.type.description)
-                       
-                           * Try:
-                              - Loosening your query. Could you use a `contains: text` variant?
-                       """
+                    ❓ No element found matching query.
+                        * Query: \(query.type.description)
+
+                        * Try:
+                           - Loosening your query. Could you use a `contains: text` variant?
+                    """
             }
         }
     }
-    
+
     init(_ type: Error, file: StaticString = #file, line: UInt = #line) {
         self.type = type
         self.file = file
         self.line = line
     }
-    
+
     let type: Error
     public let file: StaticString
     public let line: UInt
-    
+
     public var description: String {
         type.description
     }
