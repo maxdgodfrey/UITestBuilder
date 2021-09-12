@@ -1,6 +1,6 @@
 //
 //  XCTest+Extensions.swift
-//  
+//
 //
 //  Created by Max Godfrey on 7/08/21.
 //
@@ -12,8 +12,8 @@ public enum SwipeDirection {
 }
 
 extension XCUIElement {
-    
-    func swipe(_ direction: SwipeDirection, velocity: XCUIGestureVelocity? = nil) {
+
+    public func swipe(_ direction: SwipeDirection, velocity: XCUIGestureVelocity? = nil) {
         switch direction {
         case .left:
             return velocity.map { swipeLeft(velocity: $0) } ?? swipeLeft()

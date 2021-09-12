@@ -1,6 +1,6 @@
 //
 //  TestStep.swift
-//  
+//
 //
 //  Created by Max Godfrey on 1/08/21.
 //
@@ -13,14 +13,14 @@ import XCTest
 /// You can lift XCUIElement queries into a TestStep via `find(_:)`.
 public struct TestStep<Result> {
     let run: (XCUIElement) throws -> Result
-    
+
     public func callAsFunction(_ app: XCUIApplication) throws -> Result {
         try self.run(app)
     }
 }
 
-public extension TestStep {
-    
+extension TestStep {
+
     /// Creates a TestStep that always fails with the supplied Error.
     /// This is useful when you want to cause a test to fail based on some input.
     /// In practice you can use existing combinators without having to reach for these TestSteps.
@@ -37,8 +37,8 @@ public extension TestStep {
     /// ```
     /// - Parameter error: The Error to fail the test with.
     /// - Returns: A TestStep that always fails.
-    static func fail(_ error: Error) -> TestStep { TestStep { _ in throw error } }
-    
+    public static func fail(_ error: Error) -> Self { TestStep { _ in throw error } }
+
     /// Creates a TestStep that continues with the supplied value..
     /// This is useful when you want to allow a test to continue in some case, but fail in another. Also see  `static TestStep.fail(_:)`.
     /// In practice you can use existing combinators without having to reach for these TestSteps.
@@ -55,7 +55,7 @@ public extension TestStep {
     /// ```
     /// - Parameter error: The value to continue the test with.
     /// - Returns: A TestStep that passes the supplied value on.
-    static func always(_ value: Result) -> TestStep { TestStep { _ in value } }
+    public static func always(_ value: Result) -> Self { TestStep { _ in value } }
 }
 
 /// Standard entry point into creating XCUIElementQueries. Allows you to lift a supplied function into a TestStep. This provides a consistent way of describing where to find an element,
@@ -83,25 +83,25 @@ public enum Either<A, B> {
     case right(B)
 }
 
-public extension TestStep {
-    
+extension TestStep {
+
     /// An operator that transforms the Result of the reciever by applying the supplied transformation closure `f`.
     /// This allows the Result to be transformed preserving the context (TestStep).
     /// - Parameter f: The function to apply to the current result of the TestStep, assuming it hasn't failed prior.
     /// - Returns: A TestStep with it's Result transformed into `B`.
-    func map<B>(_ f: @escaping (Result) -> B) -> TestStep<B> {
+    public func map<B>(_ f: @escaping (Result) -> B) -> TestStep<B> {
         TestStep<B> { app in
             try f(self.run(app))
         }
     }
-    
+
     /// An operator that transforms the Result of the reciever by applying the supplied transformation closure `f`.
     /// This allows the context (TestStep) to be transformed based on the current Result. This is a
     /// sequencing operator.
     ///
     /// - Parameter f: The function to apply to the current result to then form the new return TestStep.
     /// - Returns: A TestStep that is composed of the reciever's result and the supplied functions `f`result.
-    func flatMap<B>(_ f: @escaping (Result) -> TestStep<B>) -> TestStep<B> {
+    public func flatMap<B>(_ f: @escaping (Result) -> TestStep<B>) -> TestStep<B> {
         TestStep<B> { app in
             let resA = try run(app)
             let stepB = f(resA)
@@ -109,21 +109,21 @@ public extension TestStep {
             return resB
         }
     }
-    
+
     /// An operator that runs both the reciever and the supplied `otherStep`, I.f.f. the result of both of these is successful will
     /// the resulting TestStep continue.
     /// - Parameter otherStep: The  TestStep to run affter the reciever (if it is successul).
     /// - Returns: A TestStep that holds the Results of both the reciever and the supplied `otherStep`.
-    func zip<B>(_ otherStep: TestStep<B>) -> TestStep<(Result, B)> {
+    public func zip<B>(_ otherStep: TestStep<B>) -> TestStep<(Result, B)> {
         TestStep<(Result, B)> { app in
             let a = try self.run(app)
             let b = try otherStep.run(app)
             return (a, b)
         }
     }
-    
+
     /// A variant of `TestStep.zip(_:)` that allow two diffferent steps.
-    func zip<B, C>(_ b: TestStep<B>, _ c: TestStep<C>) -> TestStep<(Result, B, C)> {
+    public func zip<B, C>(_ b: TestStep<B>, _ c: TestStep<C>) -> TestStep<(Result, B, C)> {
         .init { app in
             let a = try self.run(app)
             let b = try b.run(app)
@@ -131,9 +131,11 @@ public extension TestStep {
             return (a, b, c)
         }
     }
-    
+
     /// A variant of `TestStep.zip(_:)` that allow three diffferent steps.
-    func zip<B, C, D>(_ b: TestStep<B>, _ c: TestStep<C>, _ d: TestStep<D>) -> TestStep<(Result, B, C, D)> {
+    public func zip<B, C, D>(_ b: TestStep<B>, _ c: TestStep<C>, _ d: TestStep<D>) -> TestStep<
+        (Result, B, C, D)
+    > {
         .init { app in
             let a = try self.run(app)
             let b = try b.run(app)
@@ -142,16 +144,21 @@ public extension TestStep {
             return (a, b, c, d)
         }
     }
-    
+
     /// A variant of `TestStep.zip(_:)` that allow four diffferent steps.
-    func zip<B, C, D, E>(_ c0: TestStep<B>, _ c1: TestStep<C>, _ c2: TestStep<D>, _ c3: TestStep<E>) -> TestStep<(Result, B, C, D, E)> {
+    public func zip<B, C, D, E>(
+        _ c0: TestStep<B>,
+        _ c1: TestStep<C>,
+        _ c2: TestStep<D>,
+        _ c3: TestStep<E>
+    ) -> TestStep<(Result, B, C, D, E)> {
         self.zip(c0, c1, c2).zip(c3).map { ($0.0.0, $0.0.1, $0.0.2, $0.0.3, $0.1) }
     }
-   
+
     /// Run the receivers Test Step and if it fails, then fallback to the supplied  `otherStep`.
     /// - Parameter otherStep: The TestStep to try if the reciever fails.
     /// - Returns: A TestStep holding an `Either` of the Result of the reciever, if it succeeded otherwise the `otherStep` if that succeeded.
-    func orElse<B>(_ otherStep: TestStep<B>) -> TestStep<Either<Result, B>> {
+    public func orElse<B>(_ otherStep: TestStep<B>) -> TestStep<Either<Result, B>> {
         .init { app in
             do {
                 return Either<Result, B>.left(try self.run(app))
@@ -160,11 +167,11 @@ public extension TestStep {
             }
         }
     }
-    
+
     /// Run the receivers Test Step and if it fails, then fallback to the supplied  `otherStep` that is of the same resulting type as `self`
     /// - Parameter otherStep: The TestStep to try if the reciever fails.
     /// - Returns: A TestStep holding the Result of the reciever, if it succeeded otherwise the `otherStep` if that succeeded.
-    func orElse(_ otherStep: TestStep<Result>) -> TestStep<Result> {
+    public func orElse(_ otherStep: TestStep<Result>) -> TestStep<Result> {
         .init { app in
             do {
                 return try self.run(app)
@@ -173,47 +180,48 @@ public extension TestStep {
             }
         }
     }
-    
+
     /// An operator that swallows the TestStep's error if it fails, instead feeding an optional Result through.
     /// - Returns: A TestStep with it's Result lifted into Optional.
-    func optional() -> TestStep<Result?> {
+    public func optional() -> TestStep<Result?> {
         TestStep<Result?> { app in
             try? self.run(app)
         }
     }
-    
+
     /// An operator to do some work based on the current Result.
     /// - Parameter work: A function where you can perform side effects.
     /// - Returns: A TestStep with the same result that was fed in (but with side effects having being applied).
-    func `do`(sideEffects work: @escaping (Result) -> Void) -> Self {
+    public func `do`(sideEffects work: @escaping (Result) -> Void) -> Self {
         .init { app in
             let output = try self.run(app)
             work(output)
             return output
         }
     }
-    
-    
+
     /// Triggers a breakpoint in Debug build configurations, allowing you to inspect the call stack, variables etc.
     /// - Returns: The supplied TestStep but with a breakpoint occuring after it's run.
-    func debug() -> Self {
+    public func debug() -> Self {
         #if DEBUG
-        self.do { result in
-            raise(SIGINT)
-        }
+            self.do { result in
+                raise(SIGINT)
+            }
         #endif
     }
-    
+
     /// Print's the current Result
     /// - Parameter prefix: A prefix to apply for easier debugging.
     /// - Returns: The supplied TestStep but with a print side effect occuring after it's run.
-    func printResult(prefix: String = "") -> Self {
+    public func printResult(prefix: String = "") -> Self {
         self.do {
             print("\(prefix)\($0)")
         }
     }
-    
-    func toVoidStep() -> TestStep<Void> {
+
+    /// Convienence function to take any `TestStep` and ignore it's output, resulting in a `TestStep<Void>`
+    /// - Returns: A TestStep that ignores the output.
+    public func toVoidStep() -> TestStep<Void> {
         map { _ in }
     }
 }
