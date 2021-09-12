@@ -9,23 +9,6 @@ extension TestStep where Result == AnnotatedQuery {
         }
     }
 
-    public func matching(exactly text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
-        map {
-            let element = $0.query[text]
-            return AnnotatedElement(queryType: .matching(text), element: element)
-        }
-        .exists(file, line)
-    }
-
-    public func matching(accessibility identifier: String) -> TestStep<AnnotatedQuery> {
-        map {
-            AnnotatedQuery(
-                type: .matchingIdentifier(identifier),
-                query: $0.query.matching(identifier: identifier)
-            )
-        }
-    }
-
     public func onlyElement(_ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
         flatMap { query in
             // In order to provide a timely, and useful error message we can't look at the `query.elemnt` as that'll trap if there is more than one.
@@ -61,6 +44,7 @@ extension TestStep where Result == AnnotatedQuery {
     }
 }
 
+/// Functions for transforming a TestStep of XCUIElementQuery into an "Annotated" type (Query or Element).
 extension TestStep where Result == XCUIElementQuery {
 
     // TODO: matching exactly... that sucks for the caller.
@@ -70,7 +54,11 @@ extension TestStep where Result == XCUIElementQuery {
     }
 
     public func matching(predicate: NSPredicate) -> TestStep<AnnotatedQuery> {
-        map { AnnotatedQuery(type: .matchingPredicate(predicate.predicateFormat), query: $0.containing(predicate)) }
+        map { AnnotatedQuery(type: .matchingPredicate(predicate.predicateFormat), query: $0.matching(predicate)) }
+    }
+
+    public func matching(accessibility identifier: String) -> TestStep<AnnotatedQuery> {
+        map { AnnotatedQuery(type: .matchingIdentifier(identifier), query: $0.matching(identifier: identifier)) }
     }
 
     public func containing(_ text: String) -> TestStep<AnnotatedQuery> {

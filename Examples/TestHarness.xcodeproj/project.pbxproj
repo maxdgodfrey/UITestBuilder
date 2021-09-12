@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7B889D3526B94DD400229FCC /* UITestBuilder in Frameworks */ = {isa = PBXBuildFile; productRef = 7B889D3426B94DD400229FCC /* UITestBuilder */; };
+		7B89145B26EDB3F900FC81BD /* ExperimentalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B89145A26EDB3F800FC81BD /* ExperimentalUITests.swift */; };
 		7B8B63B926B697E900D72933 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8B63B826B697E900D72933 /* LoginView.swift */; };
 		7B8E22CB2668CA0100E34632 /* TestHarnessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8E22CA2668CA0100E34632 /* TestHarnessApp.swift */; };
 		7B8E22CD2668CA0100E34632 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8E22CC2668CA0100E34632 /* ContentView.swift */; };
@@ -27,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7B89145A26EDB3F800FC81BD /* ExperimentalUITests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExperimentalUITests.swift; sourceTree = "<group>"; };
 		7B8B63B526B67BB700D72933 /* FTest */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FTest; path = ..; sourceTree = "<group>"; };
 		7B8B63B826B697E900D72933 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		7B8E22C72668CA0100E34632 /* TestHarness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -103,6 +105,7 @@
 		7B8E22DE2668D5A500E34632 /* TestHarnessUITests */ = {
 			isa = PBXGroup;
 			children = (
+				7B89145A26EDB3F800FC81BD /* ExperimentalUITests.swift */,
 				7B8E22DF2668D5A500E34632 /* TestHarnessUITests.swift */,
 				7B8E22E12668D5A500E34632 /* Info.plist */,
 			);
@@ -229,6 +232,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B8E22E02668D5A500E34632 /* TestHarnessUITests.swift in Sources */,
+				7B89145B26EDB3F900FC81BD /* ExperimentalUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
