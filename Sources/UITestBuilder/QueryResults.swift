@@ -22,18 +22,21 @@ public indirect enum QueryType: CustomStringConvertible {
     case matching(String)
     case matchingIdentifier(String)
     case matchingPredicate(String)
-    case onlyElement(QueryType)
+    case first
+    case onlyElementOf(QueryType)
     case keyboard
 
     public var description: String {
         switch self {
+        case .first:
+            return "First"
         case let .boundBy(index):
             return "Bound by \(index)"
         case let .matching(value):
             return "Matching \(value)"
         case let .matchingPredicate(format):
             return "Matching predicate with format: \(format)"
-        case let .onlyElement(queryType):
+        case let .onlyElementOf(queryType):
             return "Only element of \(queryType.description)"
         case .keyboard:
             return "Keyboard wasn't displayed! Ensure that \"Connect Hardware Keyboard\" is disabled under: \"Simulator > IO > Keyboard > Connect Hardware Keyboard\""
@@ -48,7 +51,9 @@ public struct TestStepError: CustomStringConvertible, Error {
     enum Error: CustomStringConvertible {
         case noElementsMatchingQuery(query: AnnotatedQuery)
         case timedOutWaitingFor(element: AnnotatedElement)
+        case timedOutWaitingForPredicate(element: AnnotatedElement, predicate: NSPredicate)
         case timedOutWaitingForQuery(query: AnnotatedQuery)
+        case timedOutWaitingForQueryWithPredicate(query: AnnotatedQuery, predicate: NSPredicate)
         case elementDoesNotExist(element: AnnotatedElement)
         case assertionFailed
 
@@ -56,15 +61,22 @@ public struct TestStepError: CustomStringConvertible, Error {
             switch self {
             case let .timedOutWaitingFor(element):
                 return """
-                    ⏰ Timed out waiting for element!
-                        * Element: \(element)
+                    ⏰ Timed out waiting for \(element) to exist!
                         * Query: \(element.queryType.description)
                     """
-
+            case let .timedOutWaitingForPredicate(element, predicate):
+                return """
+                    ⏰ Timed out waiting for \(element)!
+                        * Predicate: \(predicate.predicateFormat)
+                    """
             case let .timedOutWaitingForQuery(query):
                 return """
-                    ⏰ Timed out waiting for query!
-                        * Query: \(query.type.description)
+                    ⏰ Timed out waiting for \(query.type.description)!
+                    """
+            case let .timedOutWaitingForQueryWithPredicate(query, predicate):
+                return """
+                    ⏰ Timed out waiting for \(query.type.description)!
+                        * Predicate: \(predicate.predicateFormat)
                     """
             case let .elementDoesNotExist(element):
                 // TODO: Change this message. We can't wait before executing the predicate, we wait after!

@@ -202,7 +202,7 @@ extension TestStep {
 
     /// Triggers a breakpoint in Debug build configurations, allowing you to inspect the call stack, variables etc.
     /// - Returns: The supplied TestStep but with a breakpoint occuring after it's run.
-    public func debug() -> Self {
+    public func breakpoint() -> Self {
         #if DEBUG
             self.do { result in
                 raise(SIGINT)

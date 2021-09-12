@@ -1,6 +1,6 @@
 //
 //  Convenience.swift
-//  
+//
 //
 //  Created by Max Godfrey on 12/09/21.
 //

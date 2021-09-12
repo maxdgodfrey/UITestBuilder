@@ -16,7 +16,7 @@ extension TestStep where Result == AnnotatedQuery {
             guard query.query.count == 1 else {
                 return .fail(TestStepError(.noElementsMatchingQuery(query: query), file: file, line: line))
             }
-            return .always(AnnotatedElement(queryType: .onlyElement(query.type), element: query.query.firstMatch))
+            return .always(AnnotatedElement(queryType: .onlyElementOf(query.type), element: query.query.firstMatch))
         }
     }
 
@@ -26,19 +26,36 @@ extension TestStep where Result == AnnotatedQuery {
         }
     }
 
-    public func wait(timeout: TimeInterval = Defaults.timeout, for minQueryCount: Int = 1, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+    public func wait(for timeout: TimeInterval = Defaults.timeout, for minQueryCount: Int = 1, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+        wait(
+            for: timeout,
+            predicate:  NSPredicate(format: "count >= \(minQueryCount)"),
+            didFailError: { query in
+                TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line)
+            }
+        )
+    }
+
+    public func wait(for timeout: TimeInterval = Defaults.timeout, for minQueryCount: Int = 1, predicate: NSPredicate, _ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
+        // Wait until the query matches the supplied minimum query count AND the supplied query
+        wait(
+            for: timeout,
+            predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [NSPredicate(format: "count >= \(minQueryCount)"), predicate]),
+            didFailError: { query in
+                TestStepError(.timedOutWaitingForQueryWithPredicate(query: query, predicate: predicate), file: file, line: line)
+            }
+        )
+    }
+
+    func wait(for timeout: TimeInterval = Defaults.timeout, predicate: NSPredicate, didFailError: @escaping (AnnotatedQuery) -> TestStepError) -> TestStep<AnnotatedQuery> {
         flatMap { query in
-            // Wait until the query matches the supplied minimum query count.
-            let predicate = NSPredicate(format: "count >= \(minQueryCount)")
             let waiter = XCTWaiter()
             let result = waiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: query.query)], timeout: timeout)
             switch result {
             case .completed:
                 return .always(query)
-            case .timedOut, .incorrectOrder, .interrupted, .invertedFulfillment:
-                return .fail(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
-            @unknown default:
-                return .fail(TestStepError(.timedOutWaitingForQuery(query: query), file: file, line: line))
+            default:
+                return .fail(didFailError(query))
             }
         }
     }
@@ -47,7 +64,14 @@ extension TestStep where Result == AnnotatedQuery {
 /// Functions for transforming a TestStep of XCUIElementQuery into an "Annotated" type (Query or Element).
 extension TestStep where Result == XCUIElementQuery {
 
-    // TODO: matching exactly... that sucks for the caller.
+    public func first() -> TestStep<AnnotatedElement> {
+        map { AnnotatedElement(queryType: .first, element: $0.firstMatch) }
+    }
+
+    public func boundBy(_ index: Int) -> TestStep<AnnotatedElement> {
+        map { AnnotatedElement(queryType: .boundBy(index), element: $0.element(boundBy: index)) }
+    }
+
     public func matching(exactly text: String, _ file: StaticString = #filePath, _ line: UInt = #line) -> TestStep<AnnotatedElement> {
         map { AnnotatedElement(queryType: .matching(text), element: $0[text]) }
             .exists(file, line)

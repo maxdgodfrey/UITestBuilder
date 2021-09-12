@@ -9,11 +9,7 @@ import XCTest
 
 extension TestStep where Result == XCUIApplication {
 
-    public func swipe(_ direction: SwipeDirection, velocity: XCUIGestureVelocity? = nil)
-        -> TestStep<
-            Void
-        >
-    {
+    public func swipe(_ direction: SwipeDirection, velocity: XCUIGestureVelocity? = nil) -> TestStep<Void> {
         self.do { app in
             app.swipe(direction, velocity: velocity)
         }

@@ -19,4 +19,12 @@ extension NSPredicate {
     public static func placeholderContains(value: String) -> NSPredicate {
         containsIgnoringCase(property: "placeholderValue", value: value)
     }
+
+    public static var enabled: NSPredicate {
+        NSPredicate(format:"enabled == true")
+    }
+
+    public static var disabled: NSPredicate {
+        NSPredicate(format:"enabled == false")
+    }
 }
