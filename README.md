@@ -71,3 +71,48 @@ func testLogin() throws {
 ```
 
 All we've done is factor the test into some parameterized helper code, nothing to write home about. The code within the screen type is the same; we locate elements onscreen, make assertions and interact. UITestBuidlers make this, the locating, interacting and asserting a breeze 💨.
+
+### Enter `TestStep`
+
+To achive a sussinct, consistent syntax, let's examine what we actually need to do our three types of _things_ in tests. It all stems from an instance of XCUIApplication, from there we can create XCUIElementQueries, XCUIElements. 
+
+This is all a `TestStep` is, a lightweight wrapper around a function from `XCUIApplication`* to a generic `Result` type. Why wrap a function, well it let's us compose `TestStep`s to form our tests. It allows us to define test steps, composing them without the actual `XCUIApplication` instance. 
+
+### Your go to entrypoint `find(:_)`
+
+In a regular XCTest you might locate an element by reaching into the current `XCUIApplication`, for instance
+`XCUIApplication().textFields["Username"]`. There's two parts at play, the first call to `textFields` creates a `XCUIElementQuery`, and the subscript runs that query looking for textfields matching exactly the supplied string `"Username"`. 
+
+The `find(:_)` function lets you get a `XCUIElementQuery`, and it really shines with keypaths:
+`find(\.textFiels)`. This returns a `TestStep<XCUIElementQuery>` which you can then narrow down or create further specific queries:
+`find(\.scrollViews.textFields).matching(exactly: "Username")`. 
+
+#### Narrowing your query
+
+Let's take a look at how you might factor our finding some element that contains some substring, good for when your XCUIElement label is driven by dynamic data:
+```
+XCUIApplication().staticTexts.matchingPredicate(NSPredicate(format: "label CONTAINS[c] %@", "Spicy Ghost Peppers"))
+```
+Tucking the predicate and factoring this into a helper:
+```
+XCUIApplication().staticTexts.matchingPredicate(.labelContains("Spicy Ghost Peppers"))
+// Perhaps you tuck this away into a helper 
+extension XCUIElementQuery {
+    
+    func containing(_ text: String) -> XCUIElementQuery {
+        matchingPredicate(.labelContains(text))
+    }
+}
+```
+We end up with:
+```
+let spicyButton = XCUIApplication().staticTexts.containing("Spicy Ghost Peppers")
+```
+Not bad at all, and with `TestSteps` we look very similar:
+```
+find(\.staticTexts).containing("Spicy Ghost Peppers")
+```
+
+So far it's just different not better! So, let's examine interaction
+
+### Interacting 
