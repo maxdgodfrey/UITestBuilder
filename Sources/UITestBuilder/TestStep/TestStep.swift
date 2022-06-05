@@ -85,7 +85,7 @@ public enum Either<A, B> {
 
 extension TestStep {
 
-    /// An operator that transforms the Result of the reciever by applying the supplied transformation closure `f`.
+    /// An operator that transforms the Result of the receiver by applying the supplied transformation closure `f`.
     /// This allows the Result to be transformed preserving the context (TestStep).
     /// - Parameter f: The function to apply to the current result of the TestStep, assuming it hasn't failed prior.
     /// - Returns: A TestStep with it's Result transformed into `B`.
@@ -95,7 +95,7 @@ extension TestStep {
         }
     }
 
-    /// An operator that transforms the Result of the reciever by applying the supplied transformation closure `f`.
+    /// An operator that transforms the Result of the receiver by applying the supplied transformation closure `f`.
     /// This allows the context (TestStep) to be transformed based on the current Result. This is a
     /// sequencing operator.
     ///
@@ -110,7 +110,7 @@ extension TestStep {
         }
     }
 
-    /// An operator that runs both the reciever and the supplied `otherStep`, I.f.f. the result of both of these is successful will
+    /// An operator that runs both the receiver and the supplied `otherStep`, I.f.f. the result of both of these is successful will
     /// the resulting TestStep continue.
     /// - Parameter otherStep: The  TestStep to run affter the reciever (if it is successul).
     /// - Returns: A TestStep that holds the Results of both the reciever and the supplied `otherStep`.
@@ -189,9 +189,9 @@ extension TestStep {
         }
     }
 
-    /// An operator to do some work based on the current Result.
+    /// An operator to perform side effects based on the current Result.
     /// - Parameter work: A function where you can perform side effects.
-    /// - Returns: A TestStep with the same result that was fed in (but with side effects having being applied).
+    /// - Returns: A TestStep with the same result that was fed in (but with side effects having being run).
     public func `do`(sideEffects work: @escaping (Result) -> Void) -> Self {
         .init { app in
             let output = try self.run(app)

@@ -7,7 +7,7 @@
 
 import XCTest
 
-/// Functions that operate on `AnnotatedElement`s.
+/// Functions that operate on `AnnotatedElement`'s.
 extension TestStep where Result == AnnotatedElement {
 
     /// If the Element exists the Test execution continues, otherwise fails with an `TestStepError.elementDoesNotExist`.
