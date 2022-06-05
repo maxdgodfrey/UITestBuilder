@@ -207,6 +207,8 @@ extension TestStep {
             self.do { result in
                 raise(SIGINT)
             }
+        #else
+            return self
         #endif
     }
 
