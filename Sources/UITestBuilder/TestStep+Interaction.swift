@@ -82,7 +82,7 @@ extension TestStep where Result == AnnotatedElement {
     /// - Returns: A TestStep that continues execution if it exists, and after double tapping the element, otherwise if it doesn't exist a failing TestStep.
     public func doubleTap(_ file: StaticString = #filePath, _ line: UInt = #line) -> Self {
         exists(file, line)
-            .do(sideEffects: { $0.element.tap() })
+            .do(sideEffects: { $0.element.doubleTap() })
     }
 
     /// A variant of TestStep.doubleTap(_:_:) that discards it's contents.  Useful for when you want to assert an element exists without performing further actions upon it.

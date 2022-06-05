@@ -12,7 +12,6 @@ class ExperimentalUITests: XCTest {
     func testExperimentalScreenType() throws {
         let app = XCUIApplication()
         app.launch()
-
         test(application: app) {
             Login.start()
                 .login(username: "max", password: "password")
@@ -52,3 +51,21 @@ extension TestStep where Result == Dashboard.Type {
 }
 
 enum Settings: TestStepScreen {}
+
+enum LoginScreen {}
+enum DashboardScreen {}
+enum SettingsScreen {}
+extension TestStep where Result == LoginScreen.Type {
+    func login(email: String, password: String) -> TestStep<DashboardScreen.Type> {
+        find(\.textFields).placeholder(containing: "email").first().wait().tap().type(email)
+            .then(find(\.secureTextFields).placeholder(containing: "password").first().tap().type(password))
+            .then(find(\.buttons).containing("Login").first().tap())
+            .haunt()
+    }
+}
+
+extension TestStep where Result == DashboardScreen.Type {
+    func openSettings() -> TestStep<SettingsScreen.Type> {
+        find(\.buttons).containing("Settings").first().wait().tap().haunt()
+    }
+}
